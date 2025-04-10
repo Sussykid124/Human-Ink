@@ -3,152 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Text Humanizer</title>
+  <title>LLM Markdown Chat</title>
   <style>
-    body {
-      background: linear-gradient(to right, #141e30, #243b55);
-      font-family: 'Segoe UI', sans-serif;
-      color: #f0f0f0;
-      margin: 0;
-      padding: 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    h1 {
-      margin-bottom: 1rem;
-      color: #00ffc8;
-    }
-    textarea, select {
-      width: 100%;
-      max-width: 700px;
-      border-radius: 10px;
-      border: none;
-      padding: 1rem;
-      font-size: 1rem;
-      margin-top: 1rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 0 10px rgba(0, 255, 200, 0.3);
-    }
-    textarea {
-      height: 150px;
-      resize: vertical;
-    }
-    button {
-      background-color: #00ffc8;
-      color: #141e30;
-      border: none;
-      border-radius: 8px;
-      padding: 0.8rem 2rem;
-      font-size: 1rem;
-      cursor: pointer;
-      font-weight: bold;
-      margin: 0.5rem;
-      box-shadow: 0 4px 12px rgba(0, 255, 200, 0.3);
-      transition: all 0.3s ease;
-    }
-    button:hover {
-      background-color: #00e0b3;
-      transform: scale(1.05);
-    }
-    #output {
-      margin-top: 2rem;
-      max-width: 700px;
-      background: #1c1f2b;
-      padding: 1rem;
-      border-radius: 10px;
-      white-space: pre-wrap;
-      box-shadow: 0 0 10px rgba(0, 255, 200, 0.2);
-    }
-    .footer {
-      margin-top: 3rem;
-      font-size: 0.9rem;
-      color: #888;
-    }
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    textarea, input { width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    button { padding: 10px 20px; border: none; border-radius: 8px; background: #007bff; color: white; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    #responseBox { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
+    label { font-weight: bold; margin-top: 10px; display: block; }
   </style>
+  <!-- Load Marked.js for Markdown support -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-  <h1>🧠 AI Text Humanizer</h1>
 
-  <textarea id="inputText" placeholder="Paste robotic or boring AI text here..."></textarea>
+  <h1>🧠 LLM Response Viewer</h1>
 
-  <select id="tone">
-    <option value="natural" selected>Natural (default)</option>
-    <option value="casual">Casual</option>
-    <option value="professional">Professional</option>
-    <option value="emotional">Emotional</option>
-  </select>
+  <label for="systemPrompt">⚙️ System Prompt</label>
+  <textarea id="systemPrompt" rows="2" placeholder="E.g., You are a teacher who explains using bullet points."></textarea>
 
-  <div>
-    <button onclick="humanizeText()">✨ Humanize Text</button>
-    <button onclick="copyOutput()">📋 Copy Result</button>
-  </div>
+  <button onclick="sendPrompt()">Send Hardcoded Prompt</button>
 
-  <div id="output">Your humanized result will appear here.</div>
-
-  <div class="footer">Powered by DeepSeek via OpenRouter • Made with 💻 & 🧠</div>
+  <h3>📜 LLM Markdown Response:</h3>
+  <div id="responseBox">Waiting for response...</div>
+  <button onclick="copyResponse()">📋 Copy Rendered Text</button>
 
   <script>
-    function getPrompt(text, tone) {
-      let styleNote = "";
+    const API_KEY = "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";
+    const MODEL = "deepseek/deepseek-chat-v3-0324:free";
+    const HARDCODED_PROMPT = "You are a rewriting engine that makes robotic or unnatural AI text sound fluent, expressive, and natural like a human wrote it. Use simple vocab and think your trying to pass ai detector test. Maintain the original meaning but adjust the tone and flow as requested";
 
-      switch (tone) {
-        case "casual":
-          styleNote = "Make the text sound relaxed, friendly, and informal—like how someone might speak in a chill conversation.";
-          break;
-        case "professional":
-          styleNote = "Make the text sound polished, clear, and formal, suitable for a professional audience.";
-          break;
-        case "emotional":
-          styleNote = "Enhance the text to be emotionally expressive and evocative—add feeling and warmth while keeping the message the same.";
-          break;
-        default:
-          styleNote = "Make the text sound natural, fluent, and like it was written by a human, without sounding robotic or artificial.";
+    async function sendPrompt() {
+      const systemPrompt = document.getElementById("systemPrompt").value.trim();
+      const messages = [];
+
+      if (systemPrompt) {
+        messages.push({ role: "system", content: systemPrompt });
       }
 
-      return `${styleNote}\n\nRewrite this:\n"${text}"`;
-    }
+      messages.push({ role: "user", content: HARDCODED_PROMPT });
 
-    async function humanizeText() {
-      const input = document.getElementById("inputText").value;
-      const tone = document.getElementById("tone").value;
-      const outputDiv = document.getElementById("output");
-
-      outputDiv.textContent = "Humanizing... Please wait ⏳";
-
-      const prompt = getPrompt(input, tone);
+      document.getElementById("responseBox").innerHTML = "<em>⏳ Thinking...</em>";
 
       try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
-            "Authorization": "Bearer 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",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${API_KEY}`,
+            "HTTP-Referer": "http://localhost",
+            "X-Title": "Markdown Chat App"
           },
           body: JSON.stringify({
-            model: "deepseek/deepseek-chat-v3-0324:free",
-            messages: [
-              { role: "system", content: "You are a tool that rewrites robotic or unnatural text to sound fluent, expressive, and human-written. Keep the original meaning. Adapt tone as requested (casual, professional, emotional, etc.) but don't add filler or unrelated content." },
-              { role: "user", content: prompt }
-            ]
+            model: MODEL,
+            messages: messages
           })
         });
 
-        const data = await response.json();
-        console.log(data);
-        const result = JSON.stringify(data, null, 2);
-        outputDiv.textContent = result;
-      } catch (err) {
-        outputDiv.textContent = "❌ Error: " + err.message;
+        const data = await res.json();
+        const rawMarkdown = data?.choices?.[0]?.message?.content || "❌ No response received.";
+        const html = marked.parse(rawMarkdown);
+        document.getElementById("responseBox").innerHTML = html;
+      } catch (error) {
+        document.getElementById("responseBox").innerHTML = `<b>🚫 Error:</b> ${error.message}`;
       }
     }
 
-    function copyOutput() {
-      const output = document.getElementById("output").textContent;
-      navigator.clipboard.writeText(output).then(() => {
-        alert("✅ Humanized text copied to clipboard!");
+    function copyResponse() {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = document.getElementById("responseBox").innerHTML;
+      const plainText = tempDiv.textContent || tempDiv.innerText || "";
+      navigator.clipboard.writeText(plainText).then(() => {
+        alert("✅ Response copied as plain text!");
       });
     }
   </script>
+
 </body>
 </html>
