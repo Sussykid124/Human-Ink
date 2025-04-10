@@ -3,45 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LLM Markdown Chat</title>
+  <title>AI Chat via OpenRouter</title>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
     textarea, input { width: 100%; margin-bottom: 10px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
     button { padding: 10px 20px; border: none; border-radius: 8px; background: #007bff; color: white; cursor: pointer; }
     button:hover { background: #0056b3; }
-    #responseBox { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
+    #responseBox { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; white-space: pre-wrap; }
     label { font-weight: bold; margin-top: 10px; display: block; }
   </style>
-  <!-- Load Marked.js for Markdown support -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
-  <h1>🧠 LLM Response Viewer</h1>
+  <h1>🤖 Talk to Your AI Assistant</h1>
 
-  <label for="systemPrompt">⚙️ System Prompt</label>
-  <textarea id="systemPrompt" rows="2" placeholder="E.g., You are a teacher who explains using bullet points."></textarea>
+  <label for="userPrompt">💬 Your Message</label>
+  <textarea id="userPrompt" rows="4" placeholder="Type your message here..."></textarea>
+  <button onclick="sendPrompt()">Send</button>
 
-  <button onclick="sendPrompt()">Send Hardcoded Prompt</button>
-
-  <h3>📜 LLM Markdown Response:</h3>
-  <div id="responseBox">Waiting for response...</div>
-  <button onclick="copyResponse()">📋 Copy Rendered Text</button>
+  <h3>📜 AI Response (Markdown):</h3>
+  <div id="responseBox">Waiting for your message...</div>
+  <button onclick="copyResponse()">📋 Copy Response</button>
 
   <script>
     const API_KEY = "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";
     const MODEL = "deepseek/deepseek-chat-v3-0324:free";
-    const HARDCODED_PROMPT = "You are a rewriting engine that makes robotic or unnatural AI text sound fluent, expressive, and natural like a human wrote it. Use simple vocab and think your trying to pass ai detector test. Maintain the original meaning but adjust the tone and flow as requested";
+    const SYSTEM_PROMPT = "You are a rewriting engine that makes robotic or unnatural AI text sound fluent, expressive, and natural like a human wrote it. Use simple vocab and think of it like your trying to pass AI detection test and not get marked AI. Maintain the original meaning but adjust the tone and flow as requested";
 
     async function sendPrompt() {
-      const systemPrompt = document.getElementById("systemPrompt").value.trim();
-      const messages = [];
-
-      if (systemPrompt) {
-        messages.push({ role: "system", content: systemPrompt });
-      }
-
-      messages.push({ role: "user", content: HARDCODED_PROMPT });
+      const userInput = document.getElementById("userPrompt").value.trim();
+      if (!userInput) return alert("Please type a message!");
 
       document.getElementById("responseBox").innerHTML = "<em>⏳ Thinking...</em>";
 
@@ -56,7 +48,10 @@
           },
           body: JSON.stringify({
             model: MODEL,
-            messages: messages
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userInput }
+            ]
           })
         });
 
@@ -74,7 +69,7 @@
       tempDiv.innerHTML = document.getElementById("responseBox").innerHTML;
       const plainText = tempDiv.textContent || tempDiv.innerText || "";
       navigator.clipboard.writeText(plainText).then(() => {
-        alert("✅ Response copied as plain text!");
+        alert("✅ Response copied!");
       });
     }
   </script>
