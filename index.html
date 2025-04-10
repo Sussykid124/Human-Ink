@@ -135,7 +135,8 @@
         });
 
         const data = await response.json();
-        const result = data.choices?.[0]?.message?.content?.trim() || "❌ No response.";
+        console.log(data);
+        const result = JSON.stringify(data, null, 2);
         outputDiv.textContent = result;
       } catch (err) {
         outputDiv.textContent = "❌ Error: " + err.message;
